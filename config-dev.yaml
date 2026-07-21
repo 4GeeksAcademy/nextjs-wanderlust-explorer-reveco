@@ -1,0 +1,117 @@
+project:
+  name: nextjs-wanderlust-explorer
+  description: Multipage React/Next.js experience explorer with URL-driven search and filters
+  repo: https://github.com/<your-username>/nextjs-wanderlust-explorer
+  visibility: public
+
+scaffold:
+  command: >
+    npx create-next-app@latest nextjs-wanderlust-explorer
+    --typescript --tailwind --eslint --app --src-dir --import-alias "@/*"
+
+stack:
+  framework: next
+  router: app
+  language: typescript
+  styling: tailwindcss
+  linting: eslint
+  state_management: react-native-only   # no Redux/Zustand/etc.
+  persistence: none                     # no localStorage, favorites reset on reload
+
+scripts:
+  dev: next dev
+  build: next build
+  start: next start
+  lint: next lint
+
+folder_structure: |
+  src/
+    app/
+      page.tsx                       # Home ("/")
+      experiences/
+        page.tsx                     # Explorer ("/experiences")
+        [id]/
+          page.tsx                   # Detail ("/experiences/[id]")
+      favorites/
+        page.tsx                     # Favorites ("/favorites")
+      profile/
+        page.tsx                     # Profile ("/profile")
+      layout.tsx                     # Root layout, mounts Navbar + shared favorites state
+    components/
+      Navbar.tsx
+      SearchBar.tsx
+      FilterBar.tsx
+      ExperienceCard.tsx
+    hooks/
+      useExperiences.ts               # or useFilters.ts — encapsulates filter logic
+    data/
+      experiences.ts                  # 100 generated Experience objects
+    types/
+      experience.ts                   # Experience interface + Category union type
+
+routes:
+  - path: /
+    page: Home
+    requires: [hero section, CTA button -> /experiences]
+  - path: /experiences
+    page: Explorer
+    requires: [SearchBar, FilterBar, ExperienceCard grid, URL query param sync, empty state]
+  - path: /experiences/[id]
+    page: Detail
+    requires: [lookup by id in local dataset, full experience content, useEffect for document.title]
+  - path: /favorites
+    page: Favorites
+    requires: [filtered ExperienceCard grid from shared favorites state, empty state]
+  - path: /profile
+    page: Profile
+    requires: [static mock profile, favorites count]
+
+data_model:
+  Experience:
+    id: string
+    title: string
+    description: string
+    category: "Adventure | Culture | Food | Wellness | Nature"
+    destination: string   # "City, Country"
+    price: number
+    rating: number
+    imageUrl: string
+  count: 100
+  source: local file, AI-generated, no external API
+
+url_query_params:
+  search: string        # matched against title via /term/i regex, case-insensitive
+  category: string       # one of the 5 Experience categories, optional
+  destination: string    # city or country substring, optional
+  behavior:
+    - filters combine with AND logic
+    - synced via useSearchParams / usePathname
+    - on load, inputs and results prefill/prefilter from existing query params
+
+favorites:
+  storage: useState at layout/page-level, passed down via props
+  persistence: none required
+  ui: heart toggle on ExperienceCard, reflected visually on toggle
+
+quality_gates:
+  - responsive: mobile + desktop
+  - client_side_navigation_only: true
+  - navbar_active_link_state: usePathname
+  - no_single_file_app: true
+  - typescript_types_consistent: true
+  - useEffect_used: true            # e.g. sync filtered results, or set document.title on detail page
+  - custom_hook_present: true       # useExperiences / useFilters
+  - empty_state_message: "No se encontraron resultados"
+
+forbidden:
+  - redux
+  - zustand
+  - recoil
+  - jotai
+  - localStorage
+  - sessionStorage
+
+deployment:
+  optional: true
+  target: vercel
+  note: include URL in repo description if deployed, not required for grading
